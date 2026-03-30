@@ -533,7 +533,6 @@ function renderRoom(){
     </div>`;
   }).join('');
   setProgress(currentRoomIdx+1,rooms.length);
-  checkNextBtn();
 }
 
 // ── Interactions ──
@@ -543,7 +542,6 @@ function setChecked(key,eid,btn){
   btn.className='toggle-btn '+(a.checked==='ok'?'ok':'');
   const vx=document.getElementById('vx'+key);
   if(vx) vx.style.display=a.checked==='ok'?'flex':'none';
-  checkNextBtn();
   setProgress(currentRoomIdx+1,rooms.length);
 }
 async function uploadPhotoToDrive(dataUrl,fileName){
@@ -580,8 +578,7 @@ function addPhoto(key,input){
       const lbl=document.getElementById('pl'+key);
       if(lbl)lbl.textContent='✅ תמונה צורפה';
       checkSaveBtn();
-      checkNextBtn();
-    };
+        };
     img.src=e.target.result;
   };
   reader.readAsDataURL(file);
@@ -595,10 +592,7 @@ function isItemDone(d){
   return false;
 }
 
-function checkNextBtn(){
-  const btn=document.getElementById('btnNext');
-  if(!btn)return;
-  const {key:rk}=rooms[currentRoomIdx];
+=rooms[currentRoomIdx];
   const roomItems=sheetData.filter(d=>d.roomKey===rk);
   let allChecked=true;
   for(let i=0;i<roomItems.length;i++){
@@ -642,7 +636,6 @@ function setStatus(key,eid,btn,status){
   }
   checkSaveBtn();
   setProgress(currentRoomIdx+1,rooms.length);
-  checkNextBtn();
 }
 function setRating(key,eid,btn,n){
   const a=answers[key];
@@ -652,7 +645,6 @@ function setRating(key,eid,btn,n){
   const isBad=a.rating&&a.rating<=2;
   const el=document.getElementById(eid);
   if(el)el.className=`item-row ${isBad?'is-bad':''}`;
-  checkNextBtn();
   setProgress(currentRoomIdx+1,rooms.length);
 }
 function checkAllProf(prof,rk){
