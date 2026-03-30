@@ -139,7 +139,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 .btn-primary{width:100%;background:var(--accent);color:#000;border:none;border-radius:var(--radius);padding:15px;font-family:'Heebo',sans-serif;font-size:16px;font-weight:700;cursor:pointer;margin-top:10px}
 .btn-primary:disabled{opacity:0.4;cursor:default}
 .nav-row{display:flex;gap:10px;margin-top:16px;padding:0 20px 20px}
-.btn-next{flex:2;background:var(--accent);color:#000;border:none;border-radius:var(--radius);padding:14px;font-family:'Heebo',sans-serif;font-size:15px;font-weight:700;cursor:pointer}
+.btn-next{flex:2;background:var(--accent);color:#000;border:none;border-radius:var(--radius);padding:14px;font-family:'Heebo',sans-serif;font-size:15px;font-weight:700;cursor:pointer;opacity:1!important;pointer-events:auto!important}
 .btn-prev{flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-family:'Heebo',sans-serif;font-size:15px;font-weight:600;cursor:pointer}
 .done-screen{text-align:center;padding:70px 20px}
 
@@ -477,7 +477,6 @@ function renderRoom(){
   document.getElementById('roomCounter').textContent=`${currentRoomIdx+1} מתוך ${rooms.length}`;
   document.getElementById('currentRoomName').textContent=room;
   document.getElementById('currentRoomArea').textContent=area||'';
-  document.getElementById('btnNext').textContent=currentRoomIdx===rooms.length-1?'סיים ←':'הבא ←';
   document.getElementById('btnPrev').style.opacity=currentRoomIdx===0?'0.3':'1';
   document.getElementById('roomDots').innerHTML=rooms.map((_,i)=>
     `<div class="room-dot ${i<currentRoomIdx?'done':i===currentRoomIdx?'current':''}"></div>`).join('');
@@ -533,6 +532,7 @@ function renderRoom(){
     </div>`;
   }).join('');
   setProgress(currentRoomIdx+1,rooms.length);
+  const nb=document.getElementById('btnNext');if(nb){nb.disabled=false;nb.style.opacity='1';}
 }
 
 // ── Interactions ──
@@ -543,6 +543,7 @@ function setChecked(key,eid,btn){
   const vx=document.getElementById('vx'+key);
   if(vx) vx.style.display=a.checked==='ok'?'flex':'none';
   setProgress(currentRoomIdx+1,rooms.length);
+  const nb=document.getElementById('btnNext');if(nb){nb.disabled=false;nb.style.opacity='1';}
 }
 async function uploadPhotoToDrive(dataUrl,fileName){
   const res=await fetch(dataUrl);
@@ -577,7 +578,6 @@ function addPhoto(key,input){
       // עדכן כפתור
       const lbl=document.getElementById('pl'+key);
       if(lbl)lbl.textContent='✅ תמונה צורפה';
-      checkSaveBtn();
         };
     img.src=e.target.result;
   };
@@ -608,13 +608,6 @@ function isItemDone(d){
   }
 }
 
-function checkSaveBtn(){
-  const btn=document.getElementById('btnSave');
-  if(!btn)return;
-  const allDone=sheetData.every(d=>isItemDone(d));
-  btn.disabled=!allDone;
-  btn.style.opacity=allDone?'1':'0.4';
-}
 
 function setStatus(key,eid,btn,status){
   const a=answers[key];
@@ -634,8 +627,8 @@ function setStatus(key,eid,btn,status){
       if(ni){ni.scrollIntoView({behavior:'smooth',block:'center'});ni.focus();}
     },100);
   }
-  checkSaveBtn();
   setProgress(currentRoomIdx+1,rooms.length);
+  const nb=document.getElementById('btnNext');if(nb){nb.disabled=false;nb.style.opacity='1';}
 }
 function setRating(key,eid,btn,n){
   const a=answers[key];
@@ -646,6 +639,7 @@ function setRating(key,eid,btn,n){
   const el=document.getElementById(eid);
   if(el)el.className=`item-row ${isBad?'is-bad':''}`;
   setProgress(currentRoomIdx+1,rooms.length);
+  const nb=document.getElementById('btnNext');if(nb){nb.disabled=false;nb.style.opacity='1';}
 }
 function checkAllProf(prof,rk){
   const items=sheetData.filter(d=>d.prof===prof&&d.roomKey===rk);
