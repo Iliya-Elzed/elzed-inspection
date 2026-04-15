@@ -95,6 +95,7 @@ body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-h
 .item-row{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:7px;overflow:hidden;transition:border-color 0.2s}
 .item-row.is-ok{border-color:var(--accent)}
 .item-row.is-bad{border-color:var(--danger)}
+.item-row.is-warn{border-color:#ffc800}
 .item-top{display:flex;align-items:center;justify-content:space-between;padding:12px 12px 8px}
 .item-name{font-size:14px;font-weight:500;flex:1;padding-left:8px;line-height:1.3}
 .toggle-group{display:flex;gap:5px;flex-shrink:0}
@@ -437,6 +438,12 @@ async function pickSheet(title){
     showToast('יש להזין שם בודק לפני הבחירה','error');
     return;
   }
+  // וודא תאריך מולא
+  if(!currentDate||currentDate===''){
+    showToast('⚠️ יש להזין תאריך','error');
+    document.getElementById('headerDate').style.borderColor='var(--danger)';
+    return;
+  }
   sheetTitle=title;
   document.getElementById('headerSub').textContent=`גיליון: ${sheetTitle}`;
   document.getElementById('progressWrap').style.display='block';
@@ -473,14 +480,15 @@ async function pickSheet(title){
       const room=lastRoom,area=lastArea,prof=lastProf;
       const item=row[C_ITEM]?.toString().trim()||'';
       if(!room||!item)continue;
-      if(item==='הערות נוספות'||item==='פירוט'||item==='מה נבדק')continue;
+      const isComment=item==='הערות נוספות';
+      if(item==='פירוט'||item==='מה נבדק')continue;
       if(room==='חלל'||prof==='מה נבדק'||prof==='מקצוע')continue;
       if(room.startsWith('סה')||item.startsWith('סה')||room.startsWith('📊'))continue;
       if(!prof)continue;
       const rk=roomKey(room,area);
       if(!roomSet.has(rk)){roomSet.add(rk);rooms.push({room,area,key:rk});}
       answers[i]={status:null,checked:null,rating:null,note:'',photo:null,rowIndex:i+1,statusCol:C_STATUS+1,checkedCol:C_CHECKED+1,noteCol:C_NOTE+1};
-      sheetData.push({roomKey:rk,room,area,prof,item,key:i});
+      sheetData.push({roomKey:rk,room,area,prof,item,key:i,isComment:isComment||false});
     }
     if(!rooms.length)throw new Error('לא נמצאו חדרים בגיליון.');
     // בדוק אם יש מצב שמור
@@ -544,6 +552,14 @@ function renderRoom(){
         const eid='e'+d.key;
         const checked=a.checked==='ok';
         const hasRating=isRating(d.item);
+        // הערות נוספות — textarea בלבד
+        if(d.isComment){return `
+        <div class="item-row" id="${eid}" style="border-color:var(--border)">
+          <div class="item-top"><span class="item-name" style="color:var(--muted);font-size:12px">${d.item}</span></div>
+          <div class="note-wrap">
+            <textarea id="n${d.key}" class="note-input" rows="2" placeholder="הוסף הערה כללית..." style="resize:vertical;min-height:60px" oninput="answers[${d.key}].note=this.value;saveLocal()">${a.note||''}</textarea>
+          </div>
+        </div>\`;}
         return `
         <div class="item-row ${a.status==='ok'?'is-ok':a.status==='bad'?'is-bad':''}" id="${eid}">
           <div class="item-top">
@@ -565,8 +581,8 @@ function renderRoom(){
               </div>
             </div>
           </div>
-          <div id="nw${d.key}" class="note-wrap" style="display:${a.status==='bad'?'block':'none'}">
-            <input id="n${d.key}" class="note-input" placeholder="הוסף הערה..." value="${(a.note||'').replace(/"/g,'&quot;')}" oninput="answers[${d.key}].note=this.value;saveLocal()" />
+          <div id="nw${d.key}" class="note-wrap" style="display:${a.status==='bad'||(hasRating&&a.rating&&a.rating<=3)?'block':'none'}">
+            <input id="n${d.key}" class="note-input ${a.status==='bad'||(hasRating&&a.rating&&a.rating<=3)?'note-required':''}" placeholder="${hasRating&&a.rating&&a.rating<=3?'⚠️ חובה: הסבר לדירוג נמוך...':'הוסף הערה...'}" value="${(a.note||'').replace(/"/g,'&quot;')}" oninput="answers[${d.key}].note=this.value;saveLocal()" />
           </div>
           <div id="pw${d.key}" class="photo-wrap" style="display:${a.status==='bad'?'block':'none'}">
             <label class="photo-btn" id="pl${d.key}" onclick="document.getElementById('pi${d.key}').click()">${a.photo?'✅ תמונה צורפה':'📷 צרף תמונה'}</label>
@@ -824,6 +840,11 @@ async function saveToSheets(){
     }catch(e){console.error('❌ C6/C7 נכשל:',e);}
     const data=sheetData.flatMap(d=>{
       const a=answers[d.key];
+      if(d.isComment){
+        // הערות נוספות — שמור טקסט לעמודת סטטוס (F)
+        if(!a.note)return[];
+        return[{range:`${sheetTitle}!${colLetter(a.statusCol)}${a.rowIndex}`,values:[[a.note]]}];
+      }
       const checkedVal=a.checked==='ok'?'✅':a.checked==='bad'?'❌':'';
       const statusVal=isRating(d.item)?(a.rating?Number(a.rating):''):(a.status==='ok'?'✅':a.status==='bad'?'❌':'');
       const noteVal=[a.note||'',photoLinks[d.key]||''].filter(Boolean).join(' | ');
